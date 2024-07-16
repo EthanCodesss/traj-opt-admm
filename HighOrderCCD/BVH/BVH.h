@@ -8,6 +8,7 @@
 
 PRJ_BEGIN
 
+// BVH类是一个数据结构类, 侧重于构建和管理层次化的边界体积
 class BVH 
 {
   public:

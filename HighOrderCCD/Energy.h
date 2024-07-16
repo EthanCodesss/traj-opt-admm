@@ -50,7 +50,7 @@ class Energy
                                        const std::vector<std::vector<double>>& d_lists)
     {
         double energy=0;
-       
+       // 循环所有轨迹点
         for(unsigned int tr_id=0;tr_id<subdivide_tree.size();tr_id++)
         {        
             std::vector<Eigen::Vector3d> c_list=c_lists[tr_id];
@@ -68,7 +68,7 @@ class Energy
             Eigen::MatrixXd P=basis*bz;
 
             double d;
-
+            // 循环所有与该轨迹点相对应的元素
             for(unsigned int k=0;k<c_list.size();k++)
             {
                 for(int j=0;j<=order_num;j++)
@@ -96,7 +96,7 @@ class Energy
     static double bound_energy(const Data& spline,const double& piece_time)
     {
         double energy=0;
-
+        // 遍历子树, subdivide_tree用于保存样条曲线段信息的容器
         for(unsigned int tr_id=0;tr_id<subdivide_tree.size();tr_id++)
         {
         

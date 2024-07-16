@@ -162,6 +162,7 @@ void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>
         bz=spline.block<order_num+1,3>(sp_id*(order_num-2),0);
         Eigen::MatrixXd P; P.noalias() = basis*bz;
 
+        // 计算曲线在每个轴方向上的投影
         Eigen::MatrixXd l; l.noalias() = P * aabb_matrix;
 	      double *l_data = l.data();
         
@@ -171,11 +172,14 @@ void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>
           lowerBound[k]=INFINITY;
         }
 
+        // 这段代码是计算样条曲线段在全局坐标系中沿各个轴方向的边界值, 进而确定曲线段的轴对齐边界框AABB
+        // 遍历样条曲线的所有的控制点
         for(int j=0;j<=order_num;j++)
         {
-
+            // 遍历三个轴
             for(int k=0;k<dim;k++)
-            {
+            { 
+              //取出第 j哥控制点在第k轴方向上的投影值
               double level = l_data[k*(order_num + 1) + j];//aabb_axis[k].dot(P[j]);
               if(level<lowerBound[k])
                 lowerBound[k]=level;
@@ -184,8 +188,10 @@ void BVH::DCDCollision(const Data& spline, std::vector<std::vector<unsigned int>
             }
            
         }
+        // 最终lowerbound 和 upperbound 向量将包含样条曲线段在全局坐标系中沿各个轴方向的最小和最大值
         
         //tr_tree.insertParticle(i, lowerBound, upperBound);
+        // 建立凸包
         aabb::AABB convex=aabb::AABB(lowerBound, upperBound);
         collision_pairs.push_back(pc_tree.query(convex, d));
     }

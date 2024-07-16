@@ -581,6 +581,7 @@ int main(int argc, char *argv[])
     
     whole_weight+=time_weight[i];
   }
+  // N(M-2)+3
   trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
 
   combination = Combination<40>::value();

@@ -73,7 +73,7 @@ public:
                              BVH& bvh)
   {
         std::vector<std::vector<unsigned int>> collision_pairs;
-
+        // 这里给 collision_pairs赋值
         bvh.DCDCollision(spline, collision_pairs,offset+margin);
 
         c_lists.resize(subdivide_tree.size());
@@ -86,7 +86,7 @@ public:
 
         for(unsigned int tr_id=0;tr_id<subdivide_tree.size();tr_id++)
         {
-          
+            
             std::vector<unsigned int> collision_pair=collision_pairs[tr_id];
             int collision_size =collision_pair.size();
             //if(collision_size==0)
@@ -421,9 +421,11 @@ public:
                                           p_lambda,  t_lambda,
                                           c_lists, d_lists,
                                           grad, hessian);
-                                          
+    // 从向量中提取 3*t_n的元素                                      
     g_t=grad(3*t_n);
     h_t=hessian(3*t_n,3*t_n);
+
+    // 从hessian矩阵中提取, 第6行, 第3*t_n列的起始列索引, 提取 3*(t_n-4),1 大小的子矩阵
     partgrad=hessian.block(6,3*t_n,3*(t_n-4),1);
 
     Eigen::VectorXd g = grad.segment(6,(t_n-4)*3);

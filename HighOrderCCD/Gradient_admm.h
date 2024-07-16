@@ -17,28 +17,32 @@ class Gradient_admm
                                         const std::vector<std::vector<double>>& d_lists,
                                         Eigen::VectorXd& grad, Eigen::MatrixXd& hessian)//all piece no fix
     { 
+        // 每一点3个坐标, trajectory_num 控制点的数量
        int n=3*trajectory_num;
         
         grad.resize(n+1); grad.setZero();
         hessian.resize(n+1,n+1); hessian.setZero();
         
+        // 每段轨迹点的数量 * 3
         int num=3*(order_num+1);
         Eigen::MatrixXd I; I.resize(num+1,num+1); I.setIdentity();
-
+        // 遍历所有样条段
         for(int sp_id=0;sp_id<piece_num;sp_id++)
         {
+            // 设置每个样条的起点, 注意这里减去2是因为: "two neighboring curves share 3 control points to ensure second order continuity"
             int init=sp_id*(order_num-2);
             Eigen::VectorXd g0;
             Eigen::MatrixXd h0;
             
+            // 计算样条 sp_id段的 gradient
             local_spline_gradient(spline,  piece_time,
                                     p_slack,  t_slack, 
                                     p_lambda,  t_lambda,
                                     c_lists, d_lists,
                                     g0,  h0, sp_id);
-                      
+            // 声明进行 Cholesky分解的类模版           
             Eigen::LLT<Eigen::MatrixXd> solver; 
-        
+            // 对 H0进行分解, 并将分解结果存储到solver中
             solver.compute(h0);
             
             if(solver.info() == Eigen::NumericalIssue)//50
@@ -51,13 +55,13 @@ class Gradient_admm
                   h0=h0-eigenvalue(0)*I+0.01*I;
                 }
             }
-
+            // 将每一段的结果存储到这个向量里
             grad.segment(3*init,num) += g0.segment(0,num);                
             hessian.block(3*init,3*init,num,num)+=  h0.block(0,0,num,num);
-
+            // 梯度向量的累加
             grad(n)+=g0(num);
             hessian(n,n)+=h0(num,num);
-
+            // 第 3* init 行, n列
             hessian.block(3*init,n,num,1)+=  h0.block(0,num,num,1);
             hessian.block(n,3*init,1,num)+=  h0.block(num,0,1,num);
               
@@ -80,11 +84,12 @@ class Gradient_admm
         int init=sp_id*(order_num-2);
         
         Eigen::MatrixXd bz;
+        // 获得控制点
         bz=spline.block<order_num+1,3>(init,0);
         
         Eigen::VectorXd g;
         Eigen::MatrixXd h;
-        //plane barrier
+        //plane barrier., 遍历分辨率, 对分辨率的每个店计算与平面障碍物相关的梯度和hessian矩阵
         for(int i=0;i<res;i++)
         {
             int tr_id=sp_id*res+i;
@@ -178,6 +183,7 @@ class Gradient_admm
 
         bound_gradient(spline,piece_time, g2,h2, g_t, h_t, partgrad);
         
+        // 由障碍物梯度和边界梯度的加权和
         g0=lambda*g1+lambda*g2;
         h0=lambda*h1+lambda*h2;
 
@@ -188,14 +194,18 @@ class Gradient_admm
         I.setIdentity();
 
         Eigen::MatrixXd B,M; 
-
+        //循环遍历每个样条段
         for(int sp_id=0;sp_id<piece_num;sp_id++)
         {
+            // 计算当前样条段在控制点数组中的起始索引
             int init=sp_id*(order_num-2);
 
+
+            // 计算当前样条段控制点与松弛变量p_slack的差值
             Data p_delta = convert_list[sp_id]*spline.block<order_num+1,3>(init,0)
                             -p_slack.block<order_num+1,3>(sp_id*(order_num+1),0);
 
+            // 提取对应样条段的拉格朗日乘子部分
             Data lamb_part=p_lambda.block<order_num+1,3>(sp_id*(order_num+1),0);
             
             Eigen::MatrixXd x1=convert_list[sp_id].transpose()*p_delta;
@@ -235,6 +245,7 @@ class Gradient_admm
         hessian(n,n)=h_t;
     }
 
+    // 将局部梯度和hessian矩阵的计算结果整合到全局梯度和hessian矩阵中
     static void plane_barrier_gradient(const Data& spline, 
                                        const std::vector<std::vector<Eigen::Vector3d>>& c_lists,
                                        const std::vector<std::vector<double>>& d_lists,
@@ -333,7 +344,7 @@ class Gradient_admm
                                               const std::vector<double>& d_list,
                                               Eigen::VectorXd& grad, Eigen::MatrixXd& hessian)
     {
-        
+        // 局部梯度和hessian矩阵的初始化
         grad.resize(3*(order_num+1));
         grad.setZero();
 
@@ -342,6 +353,7 @@ class Gradient_admm
             
 
             int sp_id=std::get<0>(subdivide_tree[tr_id]);
+            // 取出轨迹段的长度
             double weight=std::get<1>(subdivide_tree[tr_id]).second-std::get<1>(subdivide_tree[tr_id]).first;
             Eigen::MatrixXd basis=std::get<2>(subdivide_tree[tr_id]);
             int init=sp_id*(order_num-2);
@@ -367,6 +379,8 @@ class Gradient_admm
                 {
                     //d=P.row(j).dot(c_list[k])+d_list[k];
                     const double * c_data=c_list[k].data();
+                    // 获得样条曲线上的点 P[j]在x方向, y方向, z方向上的投影与障碍物法线在x方向上的分量的乘积
+                    // 使用了点到平面的计算公式来计算
                     d = P_data[j]*c_data[0] + 
                         P_data[j+(order_num+1)]*c_data[1] + 
                         P_data[j+2*(order_num+1)]*c_data[2] +d_list[k];
@@ -375,8 +389,10 @@ class Gradient_admm
                     {  
                        
                         //std::cout<<A<<"\n";
+                        // 计算样条曲线在该点沿障碍物法线方向上的导数, A_list是雅可比矩阵
                        Eigen::MatrixXd d_x; d_x.noalias()=A_list[tr_id][j]* c_list[k];//A * c_list[k];
-
+                        // {(d-margin)^2/marigin} *log(d/margin)
+                        // e1 为其一次导, e2为其二次导
                        double e1=-weight*(2*(d-margin)*log(d/margin)+(d-margin)*(d-margin)/d);
 
                        grad.noalias() += e1*d_x;

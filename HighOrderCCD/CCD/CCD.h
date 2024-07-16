@@ -13,7 +13,7 @@ class CCD
 {
   public:
     typedef Eigen::MatrixXd Data;
-    
+    // 调用GJK算法, 用于计算两个凸多面体之间最短距离的算法, 进行离散碰撞检测
     static bool GJKDCD(const Data& position, const Data& _position ,const double& d) //TT
     {
 
@@ -112,7 +112,7 @@ class CCD
       //printf ("Distance between bodies %i\n", intersection);
       return gjk_distance2 <= d*d;
     }
-
+    // 连续碰撞检测, 除了物体当前的位置外, 还包括物体的运动方向, 时间范围, 碰撞检测的阈值
     static bool GJKCCD(const Data& position, const Data& direction, const Data& _position, 
                        const double& d, const double& tMin, const double& tMax)
     {
@@ -223,7 +223,7 @@ class CCD
       //printf ("Distance between bodies %i\n", intersection);
       return gjk_distance2 <= d*d;
     }
-
+    // 对同一个物体的两个不同时间点的状态进行连续碰撞检测
     static bool SelfGJKCCD(const Data& position, const Data& direction, 
                            const Data& _position, const Data& _direction , const double& d, 
                            const double& tMin, const double& tMax, const double& _tMin, const double& _tMax)
@@ -350,7 +350,7 @@ class CCD
       //std::cout<<gjk_distance2<<"\n"<<std::flush;
       return gjk_distance2 <= d*d;
     }
-
+    // 使用K-顶点对定向投影方法进行离散碰撞检测
     static bool KDOPDCD(const Data& position, const Data& _position, const double& d)
     {
       //Data A((order_num+1),3);
@@ -412,7 +412,7 @@ class CCD
 
     }
 
-    
+    //使用K-DOP方法进行连续碰撞检测
     static bool KDOPCCD(const Data& position, const Data& direction, const Data& _position,  
                        const double& d, const double& tMin, const double& tMax)
     {

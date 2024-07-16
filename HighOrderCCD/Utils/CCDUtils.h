@@ -177,6 +177,7 @@ class Dynamic3D
   {
     Eigen::Matrix<double,N+1,N+1> M;
     //std::vector<int> coeff{1,-4,6,-4,1};
+    // 使用四重循环填充矩阵M, 循环变量i 和 j遍历矩阵的行和列, k0和k1 用于计算矩阵元素的加权和
     for(int i=0;i<=N;i++)
     {
       for(int j=0;j<=N;j++)
@@ -186,14 +187,18 @@ class Dynamic3D
         {
           for(int k1=0;k1<=K;k1++)
           {
+            // 确保索引在有效范围内部, 并且满足导数阶数 K 的限制
             if(i-k0<=N-K&&j-k1<=N-K && i-k0>=0&&j-k1>=0)
             {
+              // 根据k0 k1和的奇偶性, 判断正负号
               double temp1=((k0+k1)%2==0) ? 1 : -1;
+              // 使用组合数计算
               temp1*=combination[K][k0]*combination[K][k1]*combination[N-K][i-k0]*combination[N-K][j-k1]/(double)combination[2*N-K-K][i+j-k0-k1];
               for(int s=0;s<K;s++)
               {
                 temp1*=(N-s)*(N-s);
               }
+              // 除以归一化因子
               temp1/=(double)(2*N-K-K+1);
               temp+=temp1;
               /*
@@ -216,11 +221,9 @@ class Dynamic3D
     Eigen::Matrix<double,N+1,N+1> I; I.setIdentity();
     //M=M_convert.transpose()*M*M_convert+1e-8*I;
     M=M+1e-8*I;
-
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(M);
     Eigen::MatrixXd eigenvalue=eigensolver.eigenvalues();
     std::cout<<"eigenvalue:\n"<<eigenvalue<<std::endl;
-
     return M;
   }
 

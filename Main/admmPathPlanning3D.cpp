@@ -251,8 +251,10 @@ void init_variable(const std::vector<Eigen::Vector3d>& way_points,
                    Data& spline, Data& p_slack, Data& p_lambda, 
                    double piece_time, Eigen::VectorXd& t_slack, Eigen::VectorXd& t_lambda)
 {
-
+    // control points number
     trajectory_num = (order_num+1)+(piece_num-1)*(order_num+1-3);
+
+    // 每个点 3个维度
     spline.resize(trajectory_num,3);
 
     spline.row(0)=way_points[0].transpose();
@@ -264,6 +266,7 @@ void init_variable(const std::vector<Eigen::Vector3d>& way_points,
       spline.row(i*(order_num-2)+1)=way_points[i].transpose();
       for(int j=1;j<order_num-2;j++)
       {
+        // 进行轨迹点的插值
         spline.row(j+i*(order_num-2)+1)=double(order_num-3-j)/(order_num-4)*head.transpose()
                                          +(double)(j-1)/(order_num-4)*tail.transpose();
       }
@@ -279,6 +282,7 @@ void init_variable(const std::vector<Eigen::Vector3d>& way_points,
   p_slack.resize((order_num+1)*piece_num,3);
   for(int sp_id=0; sp_id<piece_num; sp_id++)
   {
+    // 将控制点与convert_list 相乘
     p_slack.block<order_num+1,3>(sp_id*(order_num+1),0)=convert_list[sp_id]*spline.block<order_num+1,3>(sp_id*(order_num-2),0);
   }
 
@@ -349,7 +353,6 @@ void init_variable(const std::vector<Eigen::Vector3d>& way_points,
     seperate_c[i].resize(vertex_list.size());
     seperate_d[i].resize(vertex_list.size());
   }
-
 }
 
 int main(int argc, char *argv[])
@@ -605,8 +608,6 @@ int main(int argc, char *argv[])
       Eigen::RowVector3d C4(1.0,0.1,1.0);
       Eigen::RowVector3d C5(1.0,1.0,0.1);
       
-     
-
       double x_up=V.col(0).maxCoeff();
       double x_down=V.col(0).minCoeff();
 
